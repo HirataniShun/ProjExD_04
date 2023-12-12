@@ -3,6 +3,7 @@ import os
 import random
 import sys
 import time
+from typing import Any
 import pygame as pg
 
 
@@ -140,6 +141,39 @@ class Bird(pg.sprite.Sprite):
             if self.hyper_life <= 0:  # 無敵時間が0になった時
                 self.state = "normal"  # ステータスをノーマルに変更
         
+
+class Shield(pg.sprite.Sprite):
+    """
+    防御壁のクラス
+    """
+    def __init__(self, bird: Bird, life):
+        super().__init__()
+        kx, ky = bird.dire
+        angle = math.degrees(math.atan2(-ky, kx))
+        self.image = pg.Surface((20, bird.rect.height*2))
+        pg.draw.rect(self.image, (0, 0, 255), (0, 0, 20, bird.rect.height*2))
+        self.image = pg.transform.rotozoom(self.image, angle, 1)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centery = bird.rect.centery+bird.rect.height*ky
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*kx
+        self.life = life
+
+    def update(self, bird: Bird):
+        self.life -= 1                
+        kx, ky = bird.dire
+        angle = math.degrees(math.atan2(-ky, kx))
+        self.image = pg.Surface((20, bird.rect.height*2))
+        pg.draw.rect(self.image, (0, 0, 255), (0, 0, 20, bird.rect.height*2))
+        self.image = pg.transform.rotozoom(self.image, angle, 1)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centery = bird.rect.centery+bird.rect.height*ky
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*kx
+        if self.life < 0:
+            self.kill()
+            
+
 
 class Bomb(pg.sprite.Sprite):
     """
@@ -303,10 +337,10 @@ class Score:
     爆弾：1点
     敵機：10点
     """
-    def __init__(self):
+    def __init__(self, ini_score=0):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 0
+        self.value = ini_score
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -329,6 +363,8 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    
+    shields = pg.sprite.Group()
     hyper_font = pg.font.Font(None, 50)  # 無敵時間用のフォント
     hyper_color = (0, 0, 255)  # 無敵時間の表示色
 
@@ -350,6 +386,9 @@ def main():
                     neobeams = NeoBeam(bird, 5).gen_beams()  #n個のビームを生成
                     for i in neobeams:  #生成したビームをbeamsに追加
                         beams.add(i)
+            if (event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK
+                and score.value >= 50 and len(shields) <= 0):
+                shields.add(Shield(bird, 400))
             if event.type == pg.KEYDOWN and event.key == pg.K_e and score.value >= 20:
                 EMP(emys,bombs,screen,score)
         screen.blit(bg_img, [0, 0])
@@ -372,26 +411,31 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
-        collided_bombs = pg.sprite.spritecollide(bird, bombs, False)  # こうかとんと爆弾の衝突判定
+        for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.value += 1  # 1点アップ
+        
         if bird.state == "hyper" and collided_bombs:  # 無敵状態の時
             for bomb in collided_bombs:
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクトを追加
                 bomb.kill()  # 衝突した爆弾を削除
                 score.value += 1  # スコアを1アップ
+                
         elif collided_bombs:  # 無敵ではない時
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+            
             score.update(screen)
             pg.display.update()
             time.sleep(2)
             return
-        
-        
         if bird.state == "hyper":  # 無敵時間の時
             hyper_text = hyper_font.render(f"Hyper Time: {bird.hyper_life // 50}", True, hyper_color)
             hyper_pos = (WIDTH - hyper_text.get_width() - 10, HEIGHT - hyper_text.get_height() - 10)
             screen.blit(hyper_text, hyper_pos)  # 無敵の残り時間を表示
 
         bird.update(key_lst, screen, score)
+        shields.update(bird)
+        shields.draw(screen)
         beams.update()
         beams.draw(screen)
         emys.update()
