@@ -3,6 +3,7 @@ import os
 import random
 import sys
 import time
+from typing import Any
 import pygame as pg
 
 
@@ -102,6 +103,39 @@ class Bird(pg.sprite.Sprite):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
+
+
+class Shield(pg.sprite.Sprite):
+    """
+    防御壁のクラス
+    """
+    def __init__(self, bird: Bird, life):
+        super().__init__()
+        kx, ky = bird.dire
+        angle = math.degrees(math.atan2(-ky, kx))
+        self.image = pg.Surface((20, bird.rect.height*2))
+        pg.draw.rect(self.image, (0, 0, 255), (0, 0, 20, bird.rect.height*2))
+        self.image = pg.transform.rotozoom(self.image, angle, 1)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centery = bird.rect.centery+bird.rect.height*ky
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*kx
+        self.life = life
+
+    def update(self, bird: Bird):
+        self.life -= 1                
+        kx, ky = bird.dire
+        angle = math.degrees(math.atan2(-ky, kx))
+        self.image = pg.Surface((20, bird.rect.height*2))
+        pg.draw.rect(self.image, (0, 0, 255), (0, 0, 20, bird.rect.height*2))
+        self.image = pg.transform.rotozoom(self.image, angle, 1)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centery = bird.rect.centery+bird.rect.height*ky
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*kx
+        if self.life < 0:
+            self.kill()
+            
 
 
 class Bomb(pg.sprite.Sprite):
@@ -231,10 +265,10 @@ class Score:
     爆弾：1点
     敵機：10点
     """
-    def __init__(self):
+    def __init__(self, ini_score=0):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 0
+        self.value = ini_score
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -248,13 +282,14 @@ def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"{MAIN_DIR}/fig/pg_bg.jpg")
-    score = Score()
+    score = Score(1000)
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    shields = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -265,6 +300,10 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            if (event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK
+                and score.value >= 50 and len(shields) <= 0):
+                shields.add(Shield(bird, 400))
+
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -284,6 +323,10 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
+        for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.value += 1  # 1点アップ
+
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
@@ -292,6 +335,8 @@ def main():
             return
 
         bird.update(key_lst, screen)
+        shields.update(bird)
+        shields.draw(screen)
         beams.update()
         beams.draw(screen)
         emys.update()
