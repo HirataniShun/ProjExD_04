@@ -123,15 +123,15 @@ class Bird(pg.sprite.Sprite):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
-        if key_lst[pg.K_RSHIFT] and score.value >= 100 and self.state == "normal":
-            self.state = "hyper"
-            self.hyper_life = 500
+        if key_lst[pg.K_RSHIFT] and score.value >= 100:  # 右shiftキーが押されたとき、かつ、スコア>100の時
+            self.state = "hyper"  # ステータスを無敵に変更
+            self.hyper_life += 500  # 無敵時間を500フレーム追加
             score.value -= 100
         if self.state == "hyper":
             self.image = pg.transform.laplacian(self.image)  # 無敵状態の画像に変更
             self.hyper_life -= 1
-            if self.hyper_life <= 0:
-                self.state = "normal"
+            if self.hyper_life <= 0:  # 無敵時間が0になった時
+                self.state = "normal"  # ステータスをノーマルに変更
         
 
 class Bomb(pg.sprite.Sprite):
@@ -267,7 +267,7 @@ def main():
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
     hyper_font = pg.font.Font(None, 50)  # 無敵時間用のフォント
-    hyper_color = (0, 0, 255)  # 無敵時間の表示色 (黄色)
+    hyper_color = (0, 0, 255)  # 無敵時間の表示色
 
     tmr = 0
     clock = pg.time.Clock()
@@ -290,20 +290,20 @@ def main():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            score.value += 10  # 10点アップ
+            score.value += 1000  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            score.value += 1  # 1点アップ
+            score.value += 1000  # 1点アップ
 
-        collided_bombs = pg.sprite.spritecollide(bird, bombs, False)
-        if bird.state == "hyper" and collided_bombs:
+        collided_bombs = pg.sprite.spritecollide(bird, bombs, False)  # こうかとんと爆弾の衝突判定
+        if bird.state == "hyper" and collided_bombs:  # 無敵状態の時
             for bomb in collided_bombs:
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクトを追加
                 bomb.kill()  # 衝突した爆弾を削除
-                score.value += 1  # スコアを1アップ
-        elif collided_bombs:
+                score.value += 1000  # スコアを1アップ
+        elif collided_bombs:  # 無敵ではない時
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             score.update(screen)
             pg.display.update()
