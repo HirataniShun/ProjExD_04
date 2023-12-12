@@ -437,7 +437,8 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
-        
+
+        collided_bombs = pg.sprite.spritecollide(bird, bombs, False)  # こうかとんと爆弾の衝突判定
         if bird.state == "hyper" and collided_bombs:  # 無敵状態の時
             for bomb in collided_bombs:
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクトを追加
