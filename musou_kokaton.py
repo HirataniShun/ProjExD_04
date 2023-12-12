@@ -93,6 +93,7 @@ class Bird(pg.sprite.Sprite):
         self.speed = 10
         self.state = "normal"  # 状態の変数
         self.hyper_life = 0  # 発動時間の変数
+        self.hyper_key_pressed_last_frame = False
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -123,10 +124,13 @@ class Bird(pg.sprite.Sprite):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
-        if key_lst[pg.K_RSHIFT] and score.value >= 100:  # 右shiftキーが押されたとき、かつ、スコア>100の時
+        hyper_key_pressed_current_frame = key_lst[pg.K_RSHIFT]  # 現在のフレームで右Shiftキーが押されているかどうか
+        if (hyper_key_pressed_current_frame and not self.hyper_key_pressed_last_frame
+        and score.value >= 100):  # 右shiftキーが押されたとき、かつ、スコア>100の時
             self.state = "hyper"  # ステータスを無敵に変更
             self.hyper_life += 500  # 無敵時間を500フレーム追加
             score.value -= 100
+        self.hyper_key_pressed_last_frame = hyper_key_pressed_current_frame  # 状態を更新
         if self.state == "hyper":
             self.image = pg.transform.laplacian(self.image)  # 無敵状態の画像に変更
             self.hyper_life -= 1
@@ -309,6 +313,7 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
         
         if bird.state == "hyper":
             hyper_text = hyper_font.render(f"Hyper Time: {bird.hyper_life // 50}", True, hyper_color)
