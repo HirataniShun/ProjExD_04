@@ -290,19 +290,19 @@ def main():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            score.value += 1000  # 10点アップ
+            score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            score.value += 1000  # 1点アップ
+            score.value += 1  # 1点アップ
 
         collided_bombs = pg.sprite.spritecollide(bird, bombs, False)  # こうかとんと爆弾の衝突判定
         if bird.state == "hyper" and collided_bombs:  # 無敵状態の時
             for bomb in collided_bombs:
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクトを追加
                 bomb.kill()  # 衝突した爆弾を削除
-                score.value += 1000  # スコアを1アップ
+                score.value += 1  # スコアを1アップ
         elif collided_bombs:  # 無敵ではない時
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             score.update(screen)
