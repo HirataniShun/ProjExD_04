@@ -176,10 +176,10 @@ class NeoBeam:  #追加機能6
         self.num = num
 
     def gen_beams(self):
-        beams = list()
-        for r in range(-50, +51, 100//(self.num-1)):
+        beams = list()  #beamを格納するリスト
+        for r in range(-50, +51, 100//(self.num-1)):  #ビームをnum個生成
             beams.append(Beam(self.bird, r))
-        return beams
+        return beams  #beamのリストを返す
 
 
 class Explosion(pg.sprite.Sprite):
@@ -278,16 +278,16 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:
+            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:  #追加機能6
                 neobeam_flag = True
-            if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:
+            if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:  #追加機能6
                 neobeam_flag = False
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                if not neobeam_flag:
-                    beams.add(Beam(bird))
+                if not neobeam_flag:  #追加機能6
+                    beams.add(Beam(bird))  #通常のビーム
                 else:
-                    neobeams = NeoBeam(bird, 5).gen_beams()
-                    for i in neobeams:
+                    neobeams = NeoBeam(bird, 5).gen_beams()  #n個のビームを生成
+                    for i in neobeams:  #生成したビームをbeamsに追加
                         beams.add(i)
 
                 
