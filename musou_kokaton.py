@@ -315,10 +315,10 @@ def main():
             return
         
         
-        if bird.state == "hyper":
+        if bird.state == "hyper":  # 無敵時間の時
             hyper_text = hyper_font.render(f"Hyper Time: {bird.hyper_life // 50}", True, hyper_color)
             hyper_pos = (WIDTH - hyper_text.get_width() - 10, HEIGHT - hyper_text.get_height() - 10)
-            screen.blit(hyper_text, hyper_pos)
+            screen.blit(hyper_text, hyper_pos)  # 無敵の残り時間を表示
 
         bird.update(key_lst, screen, score)
         beams.update()
