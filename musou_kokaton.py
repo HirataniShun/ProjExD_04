@@ -411,6 +411,7 @@ def main():
                         beams.add(i)
             if (event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK
                 and score.value >= 50 and len(shields) <= 0):
+                score.value -= 50
                 shields.add(Shield(bird, 400))
             if event.type == pg.KEYDOWN and event.key == pg.K_e and score.value >= 20:
                 EMP(emys,bombs,screen,score)
