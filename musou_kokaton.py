@@ -350,6 +350,29 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class Gravity(pg.sprite.Sprite):
+    """
+    重力場に関するクラス
+    """
+    def __init__(self, life):
+        """
+        引数１　life：重力場の発動時間
+        """
+        super().__init__()
+        self.image = pg.Surface((WIDTH, HEIGHT)) #空のSurfaceインスタンス生成
+        pg.draw.rect(self.image, (0,0,0), (0,0,WIDTH,HEIGHT)) #Surfaceにdrawする
+        self.image.set_alpha(200)
+        self.rect = self.image.get_rect()
+        self.life = life
+        
+    def update(self): # lifeを１減算して、0未満になったらkillする
+        self.life -=1
+        print(self.life)
+        if self.life < 0:
+            self.kill()
+           
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -363,7 +386,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-    
+    gra_group = pg.sprite.Group() # 重力場のグループ
     shields = pg.sprite.Group()
     hyper_font = pg.font.Font(None, 50)  # 無敵時間用のフォント
     hyper_color = (0, 0, 255)  # 無敵時間の表示色
@@ -428,6 +451,26 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+          
+        # リターンキーが押されるかつ、スコアが200以上の時に発動（重力場が発動してない時）
+        if key_lst[pg.K_RETURN] and score.value >= 200 and len(gra_group) == 0:
+            gra_group.add(Gravity(400)) # 重力場のスプライトを追加
+            score.value -= 200 # 発動後スコア減少
+        gra_group.update()
+        gra_group.draw(screen)
+    
+
+        # 重力場と爆弾の衝突判定
+        for gravity in gra_group:
+            bombs_hit = pg.sprite.spritecollide(gravity, bombs, True)
+            for bomb in bombs_hit:
+                exps.add(Explosion(bomb, 50)) # 爆破エフェクト発生＋グループに追加
+            # 重力場と敵の衝突判定
+            emys_hit = pg.sprite.spritecollide(gravity, emys, True)
+            for emy in emys_hit:
+                exps.add(Explosion(emy, 100)) # 爆破エフェクト発生＋グループに追加
+                score.value += 5 # スコアに5点プラス
+
         if bird.state == "hyper":  # 無敵時間の時
             hyper_text = hyper_font.render(f"Hyper Time: {bird.hyper_life // 50}", True, hyper_color)
             hyper_pos = (WIDTH - hyper_text.get_width() - 10, HEIGHT - hyper_text.get_height() - 10)
