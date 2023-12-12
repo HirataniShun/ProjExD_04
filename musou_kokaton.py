@@ -225,6 +225,28 @@ class Enemy(pg.sprite.Sprite):
         self.rect.centery += self.vy
 
 
+#追加機能3
+class EMP():
+    """
+    電磁パルスを生成する
+    """
+    def __init__(self,emys,bombs,screen,score):
+        self.image = pg.Surface((WIDTH,HEIGHT))
+        pg.draw.rect(self.image,[255,217,0],(0,0,WIDTH,HEIGHT))
+        self.image.set_alpha(50)
+        score.value -= 20
+        for i in emys:
+            i.interval = "inf"
+            i.image = pg.transform.laplacian(i.image)
+            i.image.set_colorkey((0,0,0))
+        for bomb in bombs:
+            bomb.speed *= 0.5
+            bomb.state = "inactive"    
+        screen.blit(self.image,self.image.get_rect())
+        pg.display.update()
+        time.sleep(0.05)
+    
+    
 class Score:
     """
     打ち落とした爆弾，敵機の数をスコアとして表示するクラス
@@ -243,13 +265,12 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
-
+    
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"{MAIN_DIR}/fig/pg_bg.jpg")
     score = Score()
-
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
@@ -265,15 +286,18 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN and event.key == pg.K_e and score.value >= 20:
+                EMP(emys,bombs,screen,score)
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
 
         for emy in emys:
-            if emy.state == "stop" and tmr%emy.interval == 0:
-                # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-                bombs.add(Bomb(emy, bird))
+            if emy.interval != "inf":
+                if emy.state == "stop" and tmr%emy.interval == 0:
+                    # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
+                    bombs.add(Bomb(emy, bird))
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
